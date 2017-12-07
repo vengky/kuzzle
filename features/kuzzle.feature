@@ -32,7 +32,7 @@ Feature: Kuzzle functional tests
     When I write the document "documentGrace"
     And I createOrReplace it
     Then I should have updated the document
-    And I should receive a document notification with field action equal to "replace"
+    And I should receive a document notification with field "action" equal to "replace"
     And The notification should have volatile
 
   Scenario: Replace a document
@@ -161,7 +161,8 @@ Feature: Kuzzle functional tests
 
   Scenario: Change mapping
     When I write the document "documentGrace"
-    Then I don't find a document with "Grace" in field "firstName"
+    And I refresh the index
+    Then I don't find a document with "Grace" in field "newFirstName"
     Then I change the mapping
     When I write the document "documentGrace"
     And I refresh the index
@@ -171,16 +172,16 @@ Feature: Kuzzle functional tests
   Scenario: Document creation notifications
     Given A room subscription listening to "info.city" having value "NYC"
     When I write the document "documentGrace"
-    Then I should receive a document notification with field action equal to "create"
-    And The notification should have a "_source" member
+    Then I should receive a document notification with field "action" equal to "create"
+    And The notification document should have a fulfilled content
     And The notification should have volatile
 
   @realtime
   Scenario: Document creation notifications with not exists
     Given A room subscription listening field "toto" doesn't exists
     When I write the document "documentGrace"
-    Then I should receive a document notification with field action equal to "create"
-    And The notification should have a "_source" member
+    Then I should receive a document notification with field "action" equal to "create"
+    And The notification document should have a fulfilled content
     And The notification should have volatile
 
   @realtime
@@ -189,7 +190,7 @@ Feature: Kuzzle functional tests
     When I write the document "documentGrace"
     Then I remove the document
     Then I should receive a document notification with field action equal to "delete"
-    And The notification should not have a "_source" member
+    And The notification document should have an empty content
     And The notification should have volatile
 
   @realtime
@@ -197,8 +198,8 @@ Feature: Kuzzle functional tests
     Given A room subscription listening to "info.hobby" having value "computer"
     When I write the document "documentAda"
     Then I update the document with value "Hopper" in field "lastName"
-    Then I should receive a document notification with field action equal to "update"
-    And The notification should have a "_source" member
+    Then I should receive a document notification with field "action" equal to "update"
+    And The notification document should have a fulfilled content
     And The notification should have volatile
 
   @realtime
@@ -206,8 +207,8 @@ Feature: Kuzzle functional tests
     Given A room subscription listening to "lastName" having value "Hopper"
     When I write the document "documentGrace"
     Then I update the document with value "Foo" in field "lastName"
-    Then I should receive a document notification with field action equal to "update"
-    And The notification should not have a "_source" member
+    Then I should receive a document notification with field "action" equal to "update"
+    And The notification document should have an empty content
     And The notification should have volatile
 
   @realtime
@@ -215,8 +216,8 @@ Feature: Kuzzle functional tests
     Given A room subscription listening to "info.hobby" having value "computer"
     When I write the document "documentAda"
     Then I replace the document with "documentGrace" document
-    Then I should receive a document notification with field action equal to "replace"
-    And The notification should have a "_source" member
+    Then I should receive a document notification with field "action" equal to "replace"
+    And The notification document should have a fulfilled content
     And The notification should have volatile
 
   @realtime
@@ -225,15 +226,15 @@ Feature: Kuzzle functional tests
     When I write the document "documentGrace"
     Then I replace the document with "documentAda" document
     Then I should receive a document notification with field action equal to "replace"
-    And The notification should not have a "_source" member
+    And The notification document should have an empty content
     And The notification should have volatile
 
   @realtime
   Scenario: Subscribe to a collection
     Given A room subscription listening to the whole collection
     When I write the document "documentGrace"
-    Then I should receive a document notification with field action equal to "create"
-    And The notification should have a "_source" member
+    Then I should receive a document notification with field "action" equal to "create"
+    And The notification document should have a fulfilled content
     And The notification should have volatile
 
   @realtime
@@ -243,24 +244,24 @@ Feature: Kuzzle functional tests
     And I write the document "documentAda"
     And I refresh the index
     Then I remove documents with field "info.hobby" equals to value "computer"
-    Then I should receive a document notification with field action equal to "delete"
-    And The notification should not have a "_source" member
+    Then I should receive a document notification with field "action" equal to "delete"
+    And The notification document should have an empty content
     And The notification should have volatile
 
   @realtime
   Scenario: Count how many subscription on a room
-    Given A room subscription listening to "lastName" having value "Hopper" with socket "client1"
-    Given A room subscription listening to "lastName" having value "Hopper" with socket "client2"
+    Given A room subscription listening to "lastName" having value "Hopper" with client "default"
+    Given A room subscription listening to "lastName" having value "Hopper" with client "foobar"
     Then I can count "2" subscription
 
   @realtime
   Scenario: Subscription notifications
-    Given A room subscription listening to "lastName" having value "Hopper" with socket "client1"
-    Given A room subscription listening to "lastName" having value "Hopper" with socket "client2"
-    Then I should receive a user notification with field action equal to "subscribe"
+    Given A room subscription listening to "lastName" having value "Hopper" with client "default"
+    Given A room subscription listening to "lastName" having value "Hopper" with client "foobar"
+    Then I should receive a user notification with field "action" equal to "subscribe"
     And The notification should have volatile
-    Then I unsubscribe socket "client1"
-    And I should receive a user notification with field action equal to "unsubscribe"
+    Then I unsubscribe client "default"
+    And I should receive a user notification with field "action" equal to "unsubscribe" on client "foobar"
     And The notification should have volatile
 
   Scenario: Getting the last statistics frame
@@ -269,6 +270,10 @@ Feature: Kuzzle functional tests
 
   Scenario: Getting the statistics frame from a date
     When I get the statistics frame from a date
+    Then I get at least 1 statistic frame
+
+  Scenario: Getting the statistics frame between 2 dates
+    When I get the statistics frame between 2 dates
     Then I get at least 1 statistic frame
 
   Scenario: Getting all statistics frame
@@ -342,15 +347,17 @@ Feature: Kuzzle functional tests
     Then I write the document
     Then I check the JWT Token
     And The token is valid
-    Then I delete the user "useradmin-id"
+    Then I delete the jwt from SDK
+    And I delete the user "useradmin-id"
     Then I check the JWT Token
     And The token is invalid
 
   @security
   Scenario: create restricted user
-    Then I create a restricted user "restricteduser1" with id "restricteduser1-id"
+    Given I create a restricted user "restricteduser1" with id "restricteduser1-id"
 
   @security
+  @yolo
   Scenario: Role mapping
     Given I get the role mapping
     Then The mapping should contain "controllers" field of type "object"
@@ -495,7 +502,7 @@ Feature: Kuzzle functional tests
     Given I create a user "useradmin" with id "useradmin-id"
     When I log in as useradmin:testpwd expiring in 1s
     Then I wait 2s
-    And I should receive a TokenExpired notification with field message equal to "Authentication Token Expired"
+    And I should receive a TokenExpired notification with field "message" equal to "Authentication Token Expired"
 
   @security
   Scenario: user permissions

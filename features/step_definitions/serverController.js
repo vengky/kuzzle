@@ -5,7 +5,7 @@ const
 
 defineSupportCode(function ({When}) {
   When(/^I check server health$/, function () {
-    return this.api.healthCheck()
+    this.api.healthCheck()
       .then(body => {
         if (body.error) {
           throw new Error(body.error.message);

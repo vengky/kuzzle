@@ -5,19 +5,17 @@ const
   async = require('async');
 
 defineSupportCode(function ({Then}) {
-  Then(/^I should receive a ?(.*?) notification with field ?(.*?) equal to "([^"]*)"$/, function (type, field, value, callback) {
+  Then(/^I should receive a ?(.*?) notification with field "?(.*?)" equal to "([^"]*)"(?: on client "([^"]*)")?$/, function (type, field, value, clientId, callback) {
     const main = callbackAsync => {
       setTimeout(() => {
-        if (this.api.responses) {
-          if (this.api.responses.type !== type) {
-            callbackAsync(`Wrong notification type received: ${this.api.responses.type}. Expected: ${type}`);
-            return false;
+        const message = this.api.notification(type, clientId);
+
+        if (message) {
+          if (message[field] !== value) {
+            return callbackAsync(`Expected notification field "${field}" to be equal to "${value}", but got "${message[field]}" instead.`);
           }
 
-          if (this.api.responses[field] !== value) {
-            return callbackAsync(`Expected notification field "${field}" to be equal to "${value}", but got "${this.api.responses[field]}" instead.`);
-          }
-
+          this.notification = message;
           callbackAsync();
         } else {
           callbackAsync('No notification received');
@@ -27,47 +25,47 @@ defineSupportCode(function ({Then}) {
 
     async.retry(20, main, err => {
       if (err) {
-        if (err.message) {
-          err = err.message;
-        }
-
-        return callback(new Error(err));
+        return callback(new Error(err.message || err));
       }
 
       callback();
     });
   });
 
-  Then(/^The notification should ?(not)* have a "([^"]*)" member/, function (not, member, callback) {
-    if ((this.api.responses.result[member] || not) && !(this.api.responses.result[member] && not)) {
-      callback();
-    }
-    else {
+  Then(/^The notification document should have ?(an empty|a fulfilled) content/, function (member, callback) {
+    const empty = (member === 'an empty');
+
+    if (this.notification.document === undefined
+      || (!empty && Object.keys(this.notification.document.content).length === 0)
+      || (empty && Object.keys(this.notification.document.content).length > 0)) {
+
       console.log('Wrong notification received: ');
-      console.dir(this.api.responses, {colors: true, depth: null});
-      callback('The document was ' + (not ? 'not ' : '') + 'supposed to contain the member "' + member + '"');
+      console.dir(this.notification, {colors: true, depth: null});
+      callback('The document was supposed to contain ' + member + ' content');
+      return false;
     }
+    callback();
   });
 
   Then(/^The notification should have volatile/, function (callback) {
-    if (!this.api.responses.volatile) {
+    if (!this.notification.volatile) {
       return callback('Expected volatile in the notification but none was found');
     }
 
-    let diff = Object.keys(this.volatile).length !== Object.keys(this.api.responses.volatile).length;
+    let diff = Object.keys(this.volatile).length !== Object.keys(this.notification.volatile).length;
 
     Object.keys(this.volatile).forEach(key => {
       if (!diff) {
-        if (!this.api.responses.volatile[key]) {
+        if (!this.notification.volatile[key]) {
           diff = true;
         } else {
-          diff = JSON.stringify(this.volatile[key]).localeCompare(JSON.stringify(this.api.responses.volatile[key])) !== 0;
+          diff = JSON.stringify(this.volatile[key]).localeCompare(JSON.stringify(this.notification.volatile[key])) !== 0;
         }
       }
     });
 
     if (diff) {
-      callback('Expected ' + JSON.stringify(this.api.responses.volatile) + ' to match ' + JSON.stringify(this.volatile));
+      callback('Expected ' + JSON.stringify(this.notification.volatile) + ' to match ' + JSON.stringify(this.volatile));
     } else {
       callback();
     }

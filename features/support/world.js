@@ -1,8 +1,6 @@
 const
   {defineSupportCode} = require('cucumber'),
-  HttpApi = require('./api/http'),
-  SocketIoApi = require('./api/socketio'),
-  WebSocketApi = require('./api/websocket');
+  KuzzleApi = require('./api');
 
 let
   _init;
@@ -15,25 +13,13 @@ class KWorld {
       port: 7512
     }, parameters || {});
 
-    switch (this.config.protocol) {
-      case 'http':
-        this.api = new HttpApi(this);
-        break;
-      case 'socketio':
-        this.api = new SocketIoApi(this);
-        break;
-      default:
-        // websocket
-        this.api = new WebSocketApi(this);
-        this.config.protocol = 'websocket';
-    }
-
     if (!_init) {
       console.log(`[${this.config.protocol}] ${this.config.host}:${this.config.port}`);
       _init = true;
     }
 
-    this.kuzzleConfig = require('../../lib/config');
+    this.rooms = {};
+
     this.idPrefix = 'kuzzle-functional-tests-';
 
     this.currentUser = null;
@@ -92,28 +78,24 @@ class KWorld {
 
 
     this.mapping = {
-      properties: {
-        firstName: {
-          type: 'text',
-          copy_to: 'newFirstName'
-        },
-        newFirstName: {
-          type: 'keyword',
-          store: true
-        }
+      firstName: {
+        type: 'text',
+        copy_to: 'newFirstName'
+      },
+      newFirstName: {
+        type: 'keyword',
+        store: true
       }
     };
 
     this.securitymapping = {
-      properties: {
-        foo: {
-          type: 'text',
-          copy_to: 'bar'
-        },
-        bar: {
-          type: 'keyword',
-          store: true
-        }
+      foo: {
+        type: 'text',
+        copy_to: 'bar'
+      },
+      bar: {
+        type: 'keyword',
+        store: true
       }
     };
 
@@ -372,6 +354,9 @@ class KWorld {
     };
 
     this.memoryStorageResult = null;
+
+    // Init API instance:
+    this.api = new KuzzleApi(this);
   }
 }
 

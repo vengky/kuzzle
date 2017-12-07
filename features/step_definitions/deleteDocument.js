@@ -2,52 +2,34 @@ const
   {
     defineSupportCode
   } = require('cucumber'),
-  async = require('async');
+  async = require('async'),
+  Bluebird = require('bluebird');
 
 defineSupportCode(function ({Then}) {
-  Then(/^I remove the document(?: in index "([^"]*)")?$/, function (index, callback) {
-    this.api.deleteById(this.result._id, index)
-      .then(body => {
-        if (body.error !== null) {
-          callback(body.error.message);
-          return false;
-        }
-
-        callback();
-      })
-      .catch(function (error) {
-        callback(error);
-      });
+  Then(/^I remove the document(?: in collection "([^"]*)")?(?: in index "([^"]*)")?$/, function (collection, index) {
+    return this.api.delete(this.result.id, collection, index);
   });
 
-  Then(/^I remove documents with field "([^"]*)" equals to value "([^"]*)"(?: in index "([^"]*)")?$/, function (field, value, index, callback) {
+  Then(/^I remove documents with field "([^"]*)" equals to value "([^"]*)"(?: in collection "([^"]*)")?(?: in index "([^"]*)")?$/, function (field, value, collection, index, callback) {
     var main = function (callbackAsync) {
-      setTimeout(function () {
-        var query = { query: { match: {} } };
+      setTimeout(() => {
+        const query = {
+          match: {
+            [field]: value
+          }
+        };
 
-        query.query.match[field] = value;
-
-        this.api.deleteByQuery(query, index)
-          .then(body => {
-            if (body.error) {
-              callbackAsync(body.error.message);
-              return false;
-            }
-
-            if (!body.result || body.result.ids.length === 0) {
-              callbackAsync('No result provided');
-              return false;
-            }
-
+        this.api.delete(query, collection, index)
+          .then(() => {
             callbackAsync();
           })
-          .catch(function (error) {
+          .catch(error => {
             callbackAsync(error);
           });
-      }.bind(this), 20); // end setTimeout
+      }, 20); // end setTimeout
     };
 
-    async.retry(20, main.bind(this), function (err) {
+    async.retry(20, main.bind(this), err => {
       if (err) {
         callback(err);
         return false;
@@ -57,25 +39,21 @@ defineSupportCode(function ({Then}) {
     });
   });
 
-  Then(/^I remove the documents '([^']+)'( and get partial errors)?$/, function (documents, withErrors, callback) {
+  Then(/^I remove the documents '([^']+)'( and get partial errors)?$/, function (documents, withErrors) {
     documents = JSON.parse(documents);
 
-    this.api.mDelete({ids: documents})
+    return this.api.mDelete(documents)
       .then(response => {
-        if (response.error !== null && !withErrors) {
-          callback(response.error.message);
-          return false;
+        if(withErrors) {
+          return Bluebird.reject('Should get partial error');
         }
-        else if(response.errors === null && withErrors) {
-          callback('Should get partial error');
-          return false;
-        }
-
-        callback();
       })
-      .catch(function (error) {
-        callback(error);
-      });
+      .catch(error => {
+        if (withErrors && error.status === 206) {
+          return Bluebird.resolve();
+        }
+        return Bluebird.reject(error);
+      })
   });
 });
 

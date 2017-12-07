@@ -20,18 +20,11 @@ defineSupportCode(function ({When, Then}) {
         this.result = body;
         callback();
       })
-      .catch(function (error) {
-        callback(error);
-      });
+      .catch(error => callback(error));
   });
 
   Then(/^I should receive a request id$/, function (callback) {
-    if (this.result && this.result.requestId) {
-      callback();
-      return false;
-    }
-
-    callback(new Error('No request id returned'));
+    callback((this.result && this.result.requestId) ? undefined : new Error('No request id returned'));
   });
 });
 

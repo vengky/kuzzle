@@ -22,14 +22,13 @@ defineSupportCode(function ({After, Before}) {
         promises.push(() => this.api.deleteIndex(index)
           .catch(() => true));
       }
+      promises.push(() => this.api.createIndex(this.fakeIndex));
+      promises.push(() => this.api.createCollection(this.fakeCollection));
+      promises.push(() => this.api.createCollection(this.fakeAltCollection));
 
-      promises.push(() => this.api.createIndex(this.api.world.fakeIndex));
-      promises.push(() => this.api.createCollection(this.api.world.fakeIndex, this.api.world.fakeCollection));
-      promises.push(() => this.api.createCollection(this.api.world.fakeIndex, this.api.world.fakeAltCollection));
-
-      promises.push(() => this.api.createIndex(this.api.world.fakeAltIndex));
-      promises.push(() => this.api.createCollection(this.api.world.fakeAltIndex, this.api.world.fakeCollection));
-      promises.push(() => this.api.createCollection(this.api.world.fakeAltIndex, this.api.world.fakeAltCollection));
+      promises.push(() => this.api.createIndex(this.fakeAltIndex));
+      promises.push(() => this.api.createCollection(this.fakeCollection, this.fakeAltIndex));
+      promises.push(() => this.api.createCollection(this.fakeAltCollection, this.fakeAltIndex));
 
       return Bluebird.each(promises, promise => promise());
     }
@@ -59,13 +58,13 @@ defineSupportCode(function ({After, Before}) {
       promises.push(this.api.setAutoRefresh(index, false));
     }
 
-    return Bluebird.all(promises);
+    return Bluebird.all(promises)
+      .finally(() => this.api.disconnect());
   });
 
   After(function () {
     return this.api.truncateCollection()
       .then(() => this.api.refreshIndex(this.fakeIndex))
-      .then(() => this.api.disconnect())
       .then(() => true)
       .catch(() => true);
   });
@@ -106,37 +105,46 @@ function cleanSecurity () {
     delete this.currentUser;
   }
 
+  this.api.unsetJwt();
+
   return this.api.refreshInternalIndex()
     .then(() => this.api.searchUsers({match_all: {}}, {from: 0, size: 999}))
     .then(results => {
-      const regex = new RegExp('^' + this.idPrefix);
-      results = results.result.hits
-        .filter(r => r._id.match(regex))
-        .map(r => r._id);
+      const
+        regex = new RegExp('^' + this.idPrefix),
+        users = results.users.filter(r => r.id.match(regex)).map(r => r.id);
 
-      return results.length > 0 ? this.api.deleteUsers(results, true) : Bluebird.resolve();
+      return users.length > 0
+        ? this.api.deleteUsers(users)
+        : Bluebird.resolve();
     })
     .then(() => this.api.searchProfiles({match_all: {}}, {from: 0, size: 999}))
     .then(results => {
-      const regex = new RegExp('^' + this.idPrefix);
-      results = results.result.hits.filter(r => r._id.match(regex)).map(r => r._id);
+      const
+        regex = new RegExp('^' + this.idPrefix),
+        profiles = results.profiles.filter(r => r.id.match(regex)).map(r => r.id);
 
-      return results.length > 0 ? this.api.deleteProfiles(results, true) : Bluebird.resolve();
+      return profiles.length > 0
+        ? this.api.deleteProfiles(profiles)
+        : Bluebird.resolve();
     })
     .then(() => this.api.searchRoles({match_all: {}}, {from: 0, size: 999}))
     .then(results => {
-      const regex = new RegExp('^' + this.idPrefix);
-      results = results.result.hits.filter(r => r._id.match(regex)).map(r => r._id);
+      const
+        regex = new RegExp('^' + this.idPrefix),
+        roles = results.roles.filter(r => r.id.match(regex)).map(r => r.id);
 
-      return results.length > 0 ? this.api.deleteRoles(results, true) : Bluebird.resolve();
+      return roles.length > 0
+        ? this.api.deleteRoles(roles)
+        : Bluebird.resolve();
     });
 }
 
 function cleanRedis() {
-  return this.api.callMemoryStorage('keys', { args: { pattern: this.idPrefix + '*' } })
+  return this.api.msKeys(this.idPrefix + '*')
     .then(response => {
       if (_.isArray(response.result) && response.result.length) {
-        return this.api.callMemoryStorage('del', { body: { keys: response.result } });
+        return this.api.msDel(response.result)
       }
 
       return null;
@@ -144,15 +152,9 @@ function cleanRedis() {
 }
 
 function cleanValidations() {
-  return this.api.searchSpecifications({
-    query: {
-      match_all: { boost: 1 }
-    }
-  })
+  return this.api.searchSpecifications({ query: {match_all: { boost: 1 }} })
     .then(body => Bluebird.all(body.result.hits
       .filter(r => r._id.match(/^kuzzle-test-/))
-      .map(r => this.api.deleteSpecifications(r._id.split('#')[0], r._id.split('#')[1]))
+      .map(r => deleteSpecifications(r._id.split('#')[1], r._id.split('#')[0]))
     ));
 }
-
-

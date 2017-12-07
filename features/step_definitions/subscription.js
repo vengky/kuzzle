@@ -4,126 +4,51 @@ const
   } = require('cucumber');
 
 defineSupportCode(function ({Given, Then}) {
-  Given(/^A room subscription listening to "([^"]*)" having value "([^"]*)"(?: with socket "([^"]*)")?$/, function (key, value, socketName) {
+  Given(/^A room subscription listening to "([^"]*)" having value "([^"]*)"(?: with client "([^"]*)")?$/, function (key, value, clientId) {
     const filter = {
       equals: {
         [key]: value
       }
     };
 
-    return this.api.subscribe(filter, socketName)
-      .then(body => {
-        if (body.error) {
-          throw body.error;
+    return this.api.subscribe(filter, clientId)
+      .then(room => {
+        if (room.error) {
+          throw room.error;
         }
       });
   });
 
   Given(/^A room subscription listening to the whole collection$/, function (callback) {
     this.api.subscribe({})
-      .then(body => {
-        if (body.error !== null) {
-          callback(new Error(body.error.message));
-          return false;
-        }
-
-        callback();
-      })
-      .catch(function (error) {
-        callback(new Error(error));
-      });
+      .then(room => callback(room.error && new Error(room.error)))
+      .catch(error => callback(new Error(error)));
   });
 
   Given(/^A room subscription listening field "([^"]*)" doesn't exists$/, function (key, callback) {
     var filter = {not: {exists: {field : key}}};
 
     this.api.subscribe(filter)
-      .then(body => {
-        if (body.error !== null) {
-          callback(new Error(body.error.message));
-          return false;
-        }
-
-        callback();
-      })
-      .catch(function (error) {
-        callback(new Error(error));
-      });
+      .then(room => callback(room.error && new Error(room.error)))
+      .catch(error => callback(new Error(error)));
   });
 
-  Then(/^I unsubscribe(?: socket "([^"]*)")?/, function (socketName, callback) {
-    var rooms;
-
-    if (socketName) {
-      rooms = Object.keys(this.api.subscribedRooms[socketName]);
-    }
-    else {
-      socketName = Object.keys(this.api.subscribedRooms)[0];
-      rooms = Object.keys(this.api.subscribedRooms[socketName]);
-    }
-
-    if (rooms.length === 0) {
-      callback(new Error('Cannot unsubscribe: no subscribed rooms'));
-      return false;
-    }
-
-    this.api.unsubscribe(rooms[rooms.length - 1], socketName)
-      .then(function () {
-        callback();
-      })
-      .catch(function (error) {
-        callback(new Error(error));
-      });
-  });
-
-  /**
-   * Remove room subscription
-   */
-  Then(/^I remove the first room(?: for socket "([^"]*)")?/, function (socketName, callback) {
-    var rooms;
-
-    if (socketName) {
-      rooms = Object.keys(this.api.subscribedRooms[socketName]);
-    }
-    else {
-      socketName = Object.keys(this.api.subscribedRooms)[0];
-      rooms = Object.keys(this.api.subscribedRooms[socketName]);
-    }
-
-    if (rooms.length === 0) {
-      callback(new Error('Cannot unsubscribe: no subscribed rooms'));
-      return false;
-    }
-
-    this.api.removeRooms([rooms[0]])
-      .then(function () {
-        callback();
-      })
-      .catch(function (error) {
-        callback(new Error(error));
-      });
+  Then(/^I unsubscribe(?: client "([^"]*)")?/, function (clientId, callback) {
+    this.api.unsubscribe(null, clientId)
+      .then(() => callback())
+      .catch(error => callback(new Error(error)));
   });
 
   Then(/^I can count "([^"]*)" subscription/, function (number, callback) {
     this.api.countSubscription()
-      .then(function (response) {
-        if (response.error) {
-          return callback(new Error(response.error.message));
-        }
-
-        if (!response.result.count) {
-          return callback(new Error('Expected a "count" value in response'));
-        }
-
-        if (response.result.count !== parseInt(number)) {
-          return callback(new Error('No correct value for count. Expected ' + number + ', got ' + JSON.stringify(response.result.count)));
+      .then(count => {
+        if (count !== parseInt(number)) {
+          return callback(new Error('No correct value for count. Expected ' + number + ', got ' + JSON.stringify(count)));
         }
 
         callback();
       })
-      .catch(function (error) {
-        callback(new Error(error));
-      });
+      .catch(error => callback(new Error(error)));
   });
 
   Then(/^I get the list subscriptions$/, function (callback) {
@@ -140,9 +65,7 @@ defineSupportCode(function ({Given, Then}) {
         this.result = response.result;
         callback();
       })
-      .catch(error => {
-        callback(error);
-      });
+      .catch(error => callback(error));
   });
 
   Then(/^In my list there is a collection "([^"]*)" with ([\d]*) room and ([\d]*) subscriber$/, function(collection, countRooms, countSubscribers, callback) {
