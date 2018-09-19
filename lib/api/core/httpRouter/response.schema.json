@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "https://kuzzle.io/schemas/response",
+  "properties": {
+    "requestId": { "type": "string" },
+    "status": { "type": "integer" },
+    "error": {
+      "type": ["object", "null"],
+      "id": "https://kuzzle.io/schemas/error",
+      "properties": {
+        "status": { "type": "integer" },
+        "message": { "type": "string" },
+        "stack": { "type": "string" }
+      },
+      "required": ["status", "message"]
+    },
+    "controller": { "type": "string" },
+    "action": { "type": "string" },
+    "collection": {
+      "type": ["string", "null"]
+    },
+    "index": {
+      "type": ["string", "null"]
+    },
+    "volatile": {
+      "type": ["string", "null"]
+    },
+    "result": {
+      "type": ["object", "boolean"]
+    },
+    "room": { "type": "string" }
+  }
+}
