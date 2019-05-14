@@ -107,13 +107,35 @@ bindOption(
     .action(require('./commands/start'))
 );
 
-// $ kuzzle dump
+// $ kuzzle core dump
 bindOption(
   program
     .command('dump')
     .description('create a dump of current state of kuzzle')
     .action(require('./commands/dump'))
 );
+
+// $ kuzzle dump documents
+bindOption(
+  program
+    .command("dumpCollection")
+    .description("create a dump of a collection")
+    .option("     --index <Index>", "specify the index")
+    .option("     --collection <Collection>", "specify the collection")
+    .action(require("./commands/dumpCollection"))
+);
+
+// $ kuzzle load documents from json
+bindOption(
+  program
+    .command("importDocuments")
+    .description("load documents into a collection")
+    .option("     --filePath <filePath>", "specify the file path")
+    .option("     --index <Index>", "specify the index")
+    .option("     --collection <Collection>", "specify the collection")
+    .action(require("./commands/importDocuments"))
+);
+
 
 // $ kuzzle loadMappings
 bindOption(
