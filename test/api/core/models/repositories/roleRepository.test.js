@@ -427,6 +427,7 @@ describe('Test: repositories/roleRepository', () => {
 
       role._id = 'test';
       role.controllers = controllers;
+      roleRepository.checkRoleControllersAndActions = sinon.stub().resolves();
       roleRepository.indexStorage._storageEngine.get.resolves({});
 
       roleRepository.persistToDatabase = sinon.stub().resolves();
@@ -442,6 +443,63 @@ describe('Test: repositories/roleRepository', () => {
               'core:roleRepository:save',
               { _id: 'test', controllers: controllers });
         });
+    });
+  });
+  describe.only('#checkRoleControllersAndActions', () => {
+    //const Funnel = require('../../../../../lib/api/controllers/funnelController');   
+    it('should reject if a role contains invalid controller.', () => {
+      const
+        controllers = {
+          iDontExist: {
+            actions: {
+              create: true
+            }
+          }
+        },
+        role = new Role();
+      //kuzzle.funnel = new Funnel(kuzzle);
+      //kuzzle.funnel.init();
+      role._id = 'test';
+      role.controllers = controllers;
+      return should(roleRepository.checkRoleControllersAndActions(role))
+        .be.rejectedWith(BadRequestError); 
+    });
+    it('should reject if a role contains invalid action.', () => {
+      const
+        controllers = {
+          document: {
+            actions: {
+              iDontExist: true
+            }
+          }
+        },
+        role = new Role();
+      //kuzzle.funnel = new Funnel(kuzzle);
+      //kuzzle.funnel.init();
+
+      role._id = 'test';
+      role.controllers = controllers;
+      return should(roleRepository.checkRoleControllersAndActions(role))
+        .be.rejectedWith(BadRequestError);
+    });
+    it('should resolve when a role contains valid controller and action.', () => {
+      const
+        controllers = {
+          document: {
+            actions: {
+              create: true
+            }
+          }
+        },
+        role = new Role();
+      //kuzzle.funnel = new Funnel(kuzzle);
+      //kuzzle.funnel.init();
+
+      console.log(kuzzle.funnel.controllers);
+      role._id = 'test';
+      role.controllers = controllers;
+      return should(roleRepository.checkRoleControllersAndActions(role))
+        .be.resolved();
     });
   });
 });

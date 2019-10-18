@@ -69,7 +69,20 @@ class KuzzleMock extends Kuzzle {
     };
 
     this.funnel = {
-      controllers: {},
+      controllers: sinon.stub().returns(
+        {
+          auth: {},
+          bulk: {},
+          collection: {},
+          document: {},
+          index: {},
+          memoryStorage: {},
+          ms: {},
+          realtime: {},
+          security: {},
+          server: {},
+          admin: {}
+        }),
       pluginsControllers: {},
       init: sinon.spy(),
       loadPluginControllers: sinon.spy(),
@@ -80,7 +93,9 @@ class KuzzleMock extends Kuzzle {
       processRequest: sinon.stub().resolves(),
       checkRights: sinon.stub(),
       getEventName: sinon.spy(),
-      executePluginRequest: sinon.stub().resolves()
+      executePluginRequest: sinon.stub().resolves(),
+      isAction: sinon.spy(),
+      isNativeController: sinon.spy()
     };
 
     this.gc = {
