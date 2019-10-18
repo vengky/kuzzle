@@ -445,8 +445,8 @@ describe('Test: repositories/roleRepository', () => {
         });
     });
   });
-  describe('#checkRoleControllersAndActions', () => {
-    const Funnel = require('../../../../../lib/api/controllers/funnelController');   
+  describe.only('#checkRoleControllersAndActions', () => {
+    //const Funnel = require('../../../../../lib/api/controllers/funnelController');   
     it('should reject if a role contains invalid controller.', () => {
       const
         controllers = {
@@ -457,8 +457,8 @@ describe('Test: repositories/roleRepository', () => {
           }
         },
         role = new Role();
-      kuzzle.funnel = new Funnel(kuzzle);
-      kuzzle.funnel.init();
+      //kuzzle.funnel = new Funnel(kuzzle);
+      //kuzzle.funnel.init();
       role._id = 'test';
       role.controllers = controllers;
       return should(roleRepository.checkRoleControllersAndActions(role))
@@ -474,8 +474,8 @@ describe('Test: repositories/roleRepository', () => {
           }
         },
         role = new Role();
-      kuzzle.funnel = new Funnel(kuzzle);
-      kuzzle.funnel.init();
+      //kuzzle.funnel = new Funnel(kuzzle);
+      //kuzzle.funnel.init();
 
       role._id = 'test';
       role.controllers = controllers;
@@ -492,9 +492,10 @@ describe('Test: repositories/roleRepository', () => {
           }
         },
         role = new Role();
-      kuzzle.funnel = new Funnel(kuzzle);
-      kuzzle.funnel.init();
+      //kuzzle.funnel = new Funnel(kuzzle);
+      //kuzzle.funnel.init();
 
+      console.log(kuzzle.funnel.controllers);
       role._id = 'test';
       role.controllers = controllers;
       return should(roleRepository.checkRoleControllersAndActions(role))
