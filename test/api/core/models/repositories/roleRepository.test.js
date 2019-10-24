@@ -408,6 +408,7 @@ describe('Test: repositories/roleRepository', () => {
       role._id = 'anonymous';
       role.controllers = rights;
       roleRepository.loadOneFromDatabase = sinon.stub().resolves(role);
+      roleRepository.checkRoleControllersAndActions = sinon.stub().resolves();
       return roleRepository.validateAndSaveRole(role)
         .then(response => {
           should(response._id).be.eql('anonymous');
@@ -445,8 +446,7 @@ describe('Test: repositories/roleRepository', () => {
         });
     });
   });
-  describe.only('#checkRoleControllersAndActions', () => {
-    //const Funnel = require('../../../../../lib/api/controllers/funnelController');   
+  describe('#checkRoleControllersAndActions', () => {
     it('should reject if a role contains invalid controller.', () => {
       const
         controllers = {
@@ -457,12 +457,11 @@ describe('Test: repositories/roleRepository', () => {
           }
         },
         role = new Role();
-      //kuzzle.funnel = new Funnel(kuzzle);
-      //kuzzle.funnel.init();
       role._id = 'test';
       role.controllers = controllers;
+      kuzzle.funnel.controllers = { document: { _actions: new Set(['create']) } };
       return should(roleRepository.checkRoleControllersAndActions(role))
-        .be.rejectedWith(BadRequestError); 
+        .be.rejectedWith(BadRequestError, { message: 'Trying to set role test with a non-existing controller \'iDontExist\'.'} ); 
     });
     it('should reject if a role contains invalid action.', () => {
       const
@@ -474,13 +473,13 @@ describe('Test: repositories/roleRepository', () => {
           }
         },
         role = new Role();
-      //kuzzle.funnel = new Funnel(kuzzle);
-      //kuzzle.funnel.init();
 
       role._id = 'test';
       role.controllers = controllers;
+      kuzzle.funnel.controllers = { document: { _actions: new Set(['create']) } };
+      kuzzle.funnel.controllers.document.isAction = sinon.spy();
       return should(roleRepository.checkRoleControllersAndActions(role))
-        .be.rejectedWith(BadRequestError);
+        .be.rejectedWith(BadRequestError, { message: 'Trying to set role test with a non-existing action \'iDontExist\' in controller \'document\'.' });
     });
     it('should resolve when a role contains valid controller and action.', () => {
       const
@@ -492,12 +491,11 @@ describe('Test: repositories/roleRepository', () => {
           }
         },
         role = new Role();
-      //kuzzle.funnel = new Funnel(kuzzle);
-      //kuzzle.funnel.init();
-
-      console.log(kuzzle.funnel.controllers);
       role._id = 'test';
       role.controllers = controllers;
+
+      kuzzle.funnel.controllers = { document: {_actions: new Set(['create'])}};
+      kuzzle.funnel.controllers.document.isAction = sinon.spy();
       return should(roleRepository.checkRoleControllersAndActions(role))
         .be.resolved();
     });
