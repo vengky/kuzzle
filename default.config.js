@@ -221,70 +221,56 @@ module.exports = {
     },
     storageEngine: {
       aliases: ['storageEngine'],
-      backend: 'elasticsearch',
+      backend: 'postgresql',
       client: {
-        node: 'http://localhost:9200'
+        user: 'kuzzle',
+        host: 'localhost',
+        database: 'kuzzle',
+        password: 'kuzzle',
+        port: 5432
       },
-      commonMapping: {
-        dynamic: 'false',
-        properties: {
-          _kuzzle_info: {
-            properties: {
-              author:     { type: 'keyword' },
-              createdAt:  { type: 'date' },
-              updater:    { type: 'keyword' },
-              updatedAt:  { type: 'date' }
-            }
-          }
+      commonSchema: {
+        columns: {
+          _kuzzle_info: { type: 'jsonb' }
         }
       },
       internalIndex: {
         name: 'kuzzle',
         collections: {
           users: {
-            dynamic: 'false',
-            properties: {
-              profileIds: { type: 'keyword' }
-            }
+            columns: {
+              content: { type: 'jsonb' }
+            },
+            indices: ['content.profileIds']
           },
           profiles: {
-            dynamic: 'false',
-            properties: {
-              policies: {
-                properties:  {
-                  roleId: { type: 'keyword' }
-                }
-              }
-            }
+            columns: {
+              policies: { type: 'jsonb' }
+            },
+            indices: ['policies.roleId']
           },
           roles: {
-            dynamic: 'false',
-            properties: {
-              controllers: {
-                dynamic: 'false',
-                properties: {}
-              }
+            columns: {
+              controllers: { type: 'jsonb' }
             }
           },
           validations: {
-            properties: {
-              index: { type: 'keyword' },
-              collection: { type: 'keyword' },
-              validations: {
-                dynamic: 'false',
-                properties: {}
-              }
-            }
+            columns: {
+              index: { type: 'varchar(20)' },
+              collection: { type: 'varchar(20)' },
+              validations: { type: 'jsonb' }
+            },
+            indices: []
           },
           config: {
-            dynamic: 'false',
-            properties: {}
+            columns: {
+              content: { type: 'jsonb' }
+            },
+            indices: []
           }
         }
       },
       defaults: {
-        onUpdateConflictRetries: 0,
-        scrollTTL: '15s'
       }
     }
   },
