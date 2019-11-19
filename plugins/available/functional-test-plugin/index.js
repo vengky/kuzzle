@@ -1,4 +1,5 @@
 const
+  { Request } = require('kuzzle-common-objects'),
   should = require('should'),
    _ = require('lodash');
 
@@ -34,12 +35,15 @@ class FunctionalTestPlugin {
 
     this.pipes['generic:document:beforeWrite'] = (...args) => this.genericDocumentEvent('beforeWrite', ...args);
     this.pipes['generic:document:afterWrite'] = (...args) => this.genericDocumentEvent('afterWrite', ...args);
-    this.pipes['generic:document:beforeUpdate'] = (...args) => this.genericDocumentEvent('beforeUpdate', ...args);
-    this.pipes['generic:document:afterUpdate'] = (...args) => this.genericDocumentEvent('afterUpdate', ...args);
     this.pipes['generic:document:beforeGet'] = (...args) => this.genericDocumentEvent('beforeGet', ...args);
     this.pipes['generic:document:afterGet'] = (...args) => this.genericDocumentEvent('afterGet', ...args);
     this.pipes['generic:document:beforeDelete'] = (...args) => this.genericDocumentEvent('beforeDelete', ...args);
     this.pipes['generic:document:afterDelete'] = (...args) => this.genericDocumentEvent('afterDelete', ...args);
+    this.pipes['generic:document:beforeUpdate'] = (...args) => this.genericDocumentEvent('beforeUpdate', ...args);
+    this.pipes['generic:document:afterUpdate'] = [];
+    // (...args) => this.genericDocumentEvent('afterUpdate', ...args)
+    this.pipes['generic:document:afterUpdate'].push((...args) => this.genericEventChaining(...args));
+    this.pipes['generic:document:afterUpdate'].push((...args) => this.genericEventChaining(...args));
   }
 
   init (config, context) {
@@ -113,6 +117,16 @@ class FunctionalTestPlugin {
     }
 
     return documents;
+  }
+
+  async genericEventChaining (documents, request, callback) {
+    // console.log({ documents, request, callback })
+    // console.log('---------------')
+    should(documents).be.an.Array();
+    should(request).be.instanceOf(Request);
+    should(callback).be.a.Function();
+
+    return documents
   }
 }
 
