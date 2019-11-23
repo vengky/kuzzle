@@ -26,7 +26,7 @@ services:
       - net.core.somaxconn=8192
     depends_on:
       - redis
-      - elasticsearch
+      # - elasticsearch
     ports:
       - "7512:7512"
       - "1883:1883"

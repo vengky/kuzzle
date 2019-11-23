@@ -243,23 +243,27 @@ module.exports = {
         name: 'kuzzle',
         collections: {
           users: {
+            id: { type: 'varchar(50)'},
             columns: {
               content: { type: 'jsonb' }
             },
             indices: ['content.profileIds']
           },
           profiles: {
+            id: { type: 'varchar(50)'},
             columns: {
               policies: { type: 'jsonb' }
             },
             indices: ['policies.roleId']
           },
           roles: {
+            id: { type: 'varchar(50)'},
             columns: {
               controllers: { type: 'jsonb' }
             }
           },
           validations: {
+            id: { type: 'varchar(50)'},
             columns: {
               index: { type: 'varchar(50)' },
               collection: { type: 'varchar(50)' },
@@ -268,17 +272,19 @@ module.exports = {
             indices: []
           },
           config: {
+            id: { type: 'varchar(50)'},
             columns: {
               content: { type: 'jsonb' }
             },
             indices: []
           },
-          'api-keys': {
+          'api_keys': {
+            id: { type: 'varchar(50)'},
             columns: {
               userId: { type: 'varchar(50)' },
               hash: { type: 'varchar(50)' },
               description: { type: 'text' },
-              expiresAt: { type: 'long' },
+              expiresAt: { type: 'bigint' },
               ttl: { type: 'varchar(50)' },
               token: { type: 'varchar(50)' }
             },
