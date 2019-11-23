@@ -9,6 +9,11 @@
  * @class KuzzleConfiguration
  */
 module.exports = {
+  // @deprecated
+  realtime: {
+    pcreSupport: false
+  },
+
   dump: {
     enabled: false,
     history: {
@@ -256,8 +261,8 @@ module.exports = {
           },
           validations: {
             columns: {
-              index: { type: 'varchar(20)' },
-              collection: { type: 'varchar(20)' },
+              index: { type: 'varchar(50)' },
+              collection: { type: 'varchar(50)' },
               validations: { type: 'jsonb' }
             },
             indices: []
@@ -265,6 +270,17 @@ module.exports = {
           config: {
             columns: {
               content: { type: 'jsonb' }
+            },
+            indices: []
+          },
+          'api-keys': {
+            columns: {
+              userId: { type: 'varchar(50)' },
+              hash: { type: 'varchar(50)' },
+              description: { type: 'text' },
+              expiresAt: { type: 'long' },
+              ttl: { type: 'varchar(50)' },
+              token: { type: 'varchar(50)' }
             },
             indices: []
           }
