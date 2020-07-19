@@ -51,7 +51,7 @@
     "kuzzle-common-objects": "^4.1.0",
     "kuzzle-sdk": "7.0.1",
     "kuzzle-vault": "^1.0.1",
-    "lodash": "4.17.15",
+    "lodash": "4.17.19",
     "moment": "^2.24.0",
     "mosca": "^2.8.3",
     "ms": "^2.1.2",
